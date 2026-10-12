@@ -38,12 +38,14 @@ through WMTS.*
   versus 1.59 GiB of zips, about 1,800× less ([docs/GAP.md](docs/GAP.md#measured)).
 - The Bhoonidhi API is STAC discovery + download, with no OGC data service
   ([API docs](https://bhoonidhi.nrsc.gov.in/bhoonidhi-api/)).
-- **Counter-evidence, stated openly:** Vista's own scripts load imagery as WMS, with layer URLs returned by an
-  authenticated backend (`POST /vista/Vista`). So an *internal* WMS exists; what is missing is a **public, documented,
-  cacheable WMTS / OGC API – Tiles**.
+- **Counter-evidence, stated openly:** ISRO's own report to CEOS says Vista provides "full resolution data visualization
+  capability through WMS (Web Map Service)" ([CEOS WGISS-53 ISRO report](https://ceos.org/document_management/Working_Groups/WGISS/Meetings/WGISS-53/3.Thursday/2022.03.24_11.15_Agency%20Report_ISRO.pdf)), and Vista's scripts load layers as
+  WMS from URLs returned by a backend call (`POST /vista/Vista`). So a WMS exists for Vista. What I could not find is a
+  **published WMS endpoint, GetCapabilities or layer list**, any WMTS / OGC API – Tiles, or any value query. This project
+  adds a public, documented, cacheable WMTS and OGC API – Tiles with `GetFeatureInfo` returning dB / class values.
 - Bhuvan: ~8,900 WMS layers checked, **0** SAR/EOS layers; its WMTS `GetCapabilities` returned HTTP 400 on 2026-10-11.
 
-Dated evidence and what is **not verified** (Vista WMS URLs without a token): [docs/GAP.md](docs/GAP.md).
+Dated evidence and what is **not verified** (whether Vista's WMS URLs can be used outside Vista): [docs/GAP.md](docs/GAP.md).
 
 ## 2. Service design
 
@@ -127,4 +129,4 @@ Backscatter dB uses the product's own equation `10*log10(DN^2) - 67.139999` (`pr
   water and land; tests therefore check neighbourhood fractions.
 - The first request at a new zoom renders on demand (cache not pre-seeded).
 - Behind an HTTPS tunnel, GeoServer-generated OGC API links may use `http://`; WMTS URLs are unaffected.
-- Whether Vista's WMS works without login is not verified (needs a browser).
+- Vista already visualises Bhoonidhi data through a WMS; I could not check whether its layer URLs are usable outside the viewer (needs a browser session).

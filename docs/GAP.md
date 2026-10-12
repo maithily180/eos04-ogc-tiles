@@ -9,7 +9,7 @@ reproducible. Items marked **not verified** need a logged-in browser session.
 |---|---|---|
 | Portal (cart download) | Whole-file download of open products, free registration | No |
 | Bhoonidhi API | STAC search + `GET /download`; JWT login, API access enabled on request; 20 auth/h, 3 search/s, 500 results/query | No: STAC is discovery only |
-| Vista viewer | Visual browsing of scenes | Internal, see below |
+| Vista viewer | Visual browsing of scenes | Yes, WMS for visualisation, but no published endpoint (see below) |
 | Codelab | Hosted JupyterHub | No |
 
 Sources: [API docs](https://bhoonidhi.nrsc.gov.in/bhoonidhi-api/),
@@ -20,15 +20,24 @@ Sentinel-1/2, Landsat.
 
 ## Vista (the strongest counter-argument)
 
-Vista's scripts (`https://bhoonidhi.nrsc.gov.in/vista/js/ajaxCalls.js`, `leafletExtend.js`) show that:
+What the sources say:
 
-- layers come from `POST /vista/Vista` with `token` / `tokenuser` headers (login required);
-- the response carries a `layerURL` + `layername`, which `addGeoLayerToMap()` loads as `L.TileLayer.WMS`.
+- ISRO's report to CEOS WGISS-53 (2022): *"Data Visualization service at Bhoonidhi providing full resolution data
+  visualization capability through WMS (Web Map Service)"* ([report](https://ceos.org/document_management/Working_Groups/WGISS/Meetings/WGISS-53/3.Thursday/2022.03.24_11.15_Agency%20Report_ISRO.pdf)). Vista is free for any online user.
+- Bhoonidhi's [user manual](https://bhoonidhi.nrsc.gov.in/bhoonidhi_resources/help/docs/Bhoonidhi_ISROEOHub_UserManual_V2.0.pdf) says a GeoServer map server is deployed for publishing product images on the map.
+- Vista's scripts (`https://bhoonidhi.nrsc.gov.in/vista/js/ajaxCalls.js`, `leafletExtend.js`): layers come from
+  `POST /vista/Vista` (the request sends session `token` / `tokenuser` headers); the response carries a `layerURL` +
+  `layername`, which `addGeoLayerToMap()` loads as `L.TileLayer.WMS` (it also requests `GetCapabilities`).
 
-So an **internal WMS exists behind a login**. This project does not claim "no tile service at all". The claim is:
-there is no **public, documented, cacheable WMTS / OGC API - Tiles** service for the open products, so QGIS / web
-maps / scripts cannot consume them without scraping an authenticated viewer.
-**Not verified:** whether those WMS URLs work without a token (needs the browser Network tab while Vista loads data).
+So **a WMS exists for Vista**. This project does not claim "no tile service at all". What I found is missing:
+
+- no published WMS endpoint, `GetCapabilities` URL or layer list for Vista (searched the documentation and the web);
+- no WMTS or OGC API - Tiles;
+- no value query: Vista is a viewer, not a data service (no `GetFeatureInfo` returning backscatter in dB or class values);
+- the layer URLs are handed out per session by a backend call, not as a documented service a script can rely on.
+
+**Not verified:** whether those WMS URLs can be used outside the Vista page (needs a browser Network-tab session), and
+whether Vista covers the EOS-04 India mosaic and water-spread products used here.
 
 ## Bhuvan (checked 2026-10-11)
 
@@ -46,10 +55,11 @@ these SAR-derived Bhoonidhi products.
 
 ## Gap statement
 
-> Open SAR-derived products distributed through Bhoonidhi are large tiled GeoTIFFs reachable only by login +
-> whole-file download (STAC for discovery, no data service). The backscatter mosaic alone is ~555 MB per tile per date.
-> Their only map view is an authenticated internal viewer. A developer cannot load them as a tile layer in QGIS or a
-> web map. This project adds a standards-based, public, cached tile interface: WMTS 1.0.0 and OGC API - Tiles.
+> Open SAR-derived products distributed through Bhoonidhi are large tiled GeoTIFFs delivered as whole-file downloads
+> (STAC for discovery, no data service). The backscatter mosaic alone is ~555 MB per tile per date. Bhoonidhi's Vista
+> viewer shows imagery through a WMS, but no WMS endpoint, WMTS, OGC API - Tiles or value query is published, so a
+> developer cannot load these products as a tile layer in QGIS or a web map. This project adds a standards-based,
+> public, cached tile interface: WMTS 1.0.0 and OGC API - Tiles, with `GetFeatureInfo` returning dB and class values.
 
 ## Data used in this project
 
