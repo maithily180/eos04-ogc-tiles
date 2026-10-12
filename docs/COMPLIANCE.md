@@ -14,7 +14,7 @@ No official OGC CITE / TEAM Engine run was done; this is spec-driven checking pl
 | `GetFeatureInfo` | Tested: returns `GRAY_INDEX` class values (0 / 2 for water spread; 1 / 2 / 3 for the change layer); formats `text/plain`, `application/vnd.ogc.gml`, `text/xml`, `application/json`. |
 | Tile matrix sets | `EPSG:3857` (25 levels, `urn:ogc:def:crs:EPSG::3857`), `EPSG:4326` (22 levels), and the legacy `EPSG:900913`. Tested. |
 | Exceptions | Bad request returns HTTP 400 with an OGC `ExceptionReport`. Tested. |
-| Client interoperability | Parsed by OWSLib `WebMapTileService`. Tested. QGIS not tested in this environment. |
+| Client interoperability | Parsed by OWSLib `WebMapTileService`. Tested. **QGIS 3.40.9** (headless PyQGIS, `tests/qgis_check.py`): all 10 layers load from GetCapabilities (EPSG:3857), the EPSG:4326 matrix set loads, a map renders ([docs/qgis_render.png](qgis_render.png)), and identify (GetFeatureInfo) returns -23.2 dB on open water and -10.1 dB on land. 14 of 14 checks pass. |
 
 ## OGC API – Tiles Part 1 (OGC 20-057), GeoServer `ogcapi-tiles` module
 
@@ -40,4 +40,4 @@ WMS `GetMap` on the source layers (GeoServer built-in), tested.
 
 ## Not done
 - Official CITE (TEAM Engine) run for WMTS / OGC API – Tiles.
-- QGIS and a second independent client test.
+- A test in the QGIS desktop GUI (the headless QGIS engine was tested).
