@@ -43,10 +43,10 @@
               { attribution: '&copy; OpenStreetMap', maxZoom: 19 }).addTo(map);
   let overlays = {}, control, active = null, base = '';
 
-  // default: same origin as this page when served by the gateway, else local GeoServer
+  // default: the same origin that served this page (the read-only gateway, locally or behind a public tunnel);
+  // only when the file is opened straight from disk do we fall back to the local gateway
   document.getElementById('base').value =
-    location.protocol.startsWith('http') && location.port !== '' && location.port !== '8080'
-      ? location.origin + '/geoserver' : 'http://localhost:8080/geoserver';
+    location.protocol.startsWith('http') ? location.origin + '/geoserver' : 'http://localhost:8081/geoserver';
 
   const wmtsUrl = (b, layer) =>   // RESTful WMTS served by GeoWebCache; Web Mercator (EPSG:3857-equivalent)
     `${b}/gwc/service/wmts/rest/${layer}/EPSG:900913/EPSG:900913:{z}/{y}/{x}?format=image/png`;
