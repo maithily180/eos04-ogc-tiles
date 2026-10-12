@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OGC Request Explorer</title>
+<style>
+  :root { --bg:#f6f7f9; --card:#fff; --ink:#1b1f24; --muted:#5b6670; --line:#d9dee4; --accent:#1f4e8c; --ok:#1a7f37; --bad:#b42318; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#14181d; --card:#1c2128; --ink:#e6e9ed; --muted:#9aa5b1; --line:#2f3741; --accent:#7cb0ff; --ok:#56d364; --bad:#ff7b72; }
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:15px/1.5 system-ui, -apple-system, Segoe UI, sans-serif; }
+  header, main { max-width: 980px; margin: 0 auto; padding: 0 16px; }
+  header { padding-top: 22px; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  .sub { color: var(--muted); margin: 0 0 12px; }
+  .bar { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin: 10px 0 4px; }
+  .bar input { flex:1 1 280px; min-width:0; padding:7px 9px; border:1px solid var(--line); border-radius:6px; background:var(--card); color:var(--ink); font:inherit; }
+  button, a.btn { padding:7px 13px; border:1px solid var(--accent); background:var(--accent); color:#fff; border-radius:6px; font:inherit; cursor:pointer; text-decoration:none; }
+  button.ghost, a.ghost { background:transparent; color:var(--accent); }
+  h2 { font-size: 13px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); margin: 26px 0 8px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:14px 16px; margin: 0 0 12px; }
+  .card h3 { font-size:16px; margin:0 0 2px; }
+  .say { color:var(--muted); margin:0 0 8px; }
+  .url { font:12px/1.4 ui-monospace, Consolas, monospace; word-break:break-all; background:var(--bg); border:1px solid var(--line); border-radius:6px; padding:6px 8px; margin:6px 0 8px; }
+  .row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  .out { margin-top:10px; }
+  .out pre { max-height:260px; overflow:auto; background:var(--bg); border:1px solid var(--line); border-radius:6px; padding:8px; font:12px/1.4 ui-monospace, Consolas, monospace; white-space:pre-wrap; word-break:break-word; margin:6px 0 0; }
+  .out img { max-width:100%; border:1px solid var(--line); border-radius:6px; background:repeating-conic-gradient(#ccc 0 25%, #fff 0 50%) 0 0/16px 16px; }
+  .badge { display:inline-block; padding:1px 8px; border-radius:20px; font-size:12px; font-weight:600; border:1px solid currentColor; }
+  .ok { color:var(--ok); } .bad { color:var(--bad); }
+  ul.layers { columns: 2; margin: 6px 0 0; padding-left: 18px; font: 12.5px/1.5 ui-monospace, Consolas, monospace; }
+  footer { max-width:980px; margin:20px auto 40px; padding:0 16px; color:var(--muted); font-size:13px; }
+  @media (max-width:600px){ ul.layers{columns:1} }
+</style>
+</head>
+<body>
+<header>
+  <h1>OGC Request Explorer</h1>
+  <p class="sub">EOS-04 SAR products from Bhoonidhi (tile N16E079, Nagarjuna Sagar) served as WMTS 1.0.0 and OGC API &ndash; Tiles. Every box below is a real HTTP request to the service. Press <b>Run</b>, or open the address in a new tab.</p>
+  <div class="bar">
+    <label for="base"><b>Server</b></label>
+    <input id="base" spellcheck="false">
+    <button id="runall">Run all</button>
+    <a class="btn ghost" href="index.html">Open the web map</a>
+  </div>
+</header>
+<main id="main"></main>
+<footer>The service is read-only: GET requests to tile, capabilities and WMS endpoints only. The last two boxes show that GeoServer's admin interface and REST API are blocked.</footer>
+
+<script>
+const $ = s => document.querySelector(s);
+const baseInput = $('#base');
+baseInput.value = (location.protocol.startsWith('http') && location.origin) ? location.origin + '/geoserver' : 'http://localhost:8081/geoserver';
+const WMTS = '/gwc/service/wmts';
+const T10 = 'tilematrixset=EPSG:3857&tilematrix=EPSG:3857:10&tilerow=464&tilecol=737';
+const gfi = (layer, row, col, i, j) => `${WMTS}?service=WMTS&request=GetFeatureInfo&version=1.0.0&layer=bhoonidhi:${layer}&style=&format=image/png&infoformat=application/json&tilematrixset=EPSG:3857&tilematrix=EPSG:3857:14&tilerow=${row}&tilecol=${col}&i=${i}&j=${j}`;
+
+const SECTIONS = [
+  ['1. WMTS 1.0.0', [
+    { title: 'GetCapabilities', say: 'The service describes itself: layers, formats and tile matrix sets.',
+      path: `${WMTS}?service=WMTS&request=GetCapabilities&version=1.0.0`, kind: 'caps' },
+    { title: 'GetTile: HH backscatter (dB), cycle 97', say: 'One 256 x 256 map tile, a few tens of KB, instead of a 555 MB download.',
+      path: `${WMTS}?service=WMTS&request=GetTile&version=1.0.0&layer=bhoonidhi:bs_hh_c97&style=&format=image/png&${T10}`, kind: 'image' },
+    { title: 'GetTile: water change, cycle 95 to 97', say: 'Dark blue = water gained, orange = lost, light blue = stable.',
+      path: `${WMTS}?service=WMTS&request=GetTile&version=1.0.0&layer=bhoonidhi:wschange_c95_c97&style=&format=image/png&${T10}`, kind: 'image' },
+    { title: 'GetTile in the other tile matrix set (EPSG:4326)', say: 'Same HH backscatter layer, geographic tiling scheme (a coarser, wider view).',
+      path: `${WMTS}?service=WMTS&request=GetTile&version=1.0.0&layer=bhoonidhi:bs_hh_c97&style=&format=image/png&tilematrixset=EPSG:4326&tilematrix=EPSG:4326:6&tilerow=26&tilecol=92`, kind: 'image' },
+  ]],
+  ['2. WMTS GetFeatureInfo: ask the map for a value', [
+    { title: 'Open water, HH backscatter (cycle 97)', say: 'Expect about -23 dB: very dark, calm water.',
+      path: gfi('bs_hh_c97', 7408, 11797, 133, 99), kind: 'json' },
+    { title: 'Land, HH backscatter (cycle 97)', say: 'Expect about -10 dB: brighter.',
+      path: gfi('bs_hh_c97', 7444, 11823, 201, 178), kind: 'json' },
+    { title: 'A spot that was land in cycle 95 ...', say: 'Expect about -15.7 dB.',
+      path: gfi('bs_hh_c95', 7428, 11795, 135, 67), kind: 'json' },
+    { title: '... and is water in cycle 97', say: 'Expect about -26.2 dB: the reservoir has reached this spot.',
+      path: gfi('bs_hh_c97', 7428, 11795, 135, 67), kind: 'json' },
+    { title: 'The derived water-change layer agrees', say: 'Class 2 = water gained.',
+      path: gfi('wschange_c95_c97', 7428, 11795, 135, 67), kind: 'json' },
+  ]],
+  ['3. Errors are proper OGC exceptions', [
+    { title: 'Request for a layer that does not exist', say: 'Returns an OGC ExceptionReport (HTTP 400).',
+      path: `${WMTS}?service=WMTS&request=GetTile&version=1.0.0&layer=nope`, kind: 'text' },
+  ]],
+  ['4. OGC API – Tiles', [
+    { title: 'Collections', say: 'One collection per layer; only our 10 layers are advertised.',
+      path: '/ogc/tiles/v1/collections?f=application/json', kind: 'collections' },
+    { title: 'Conformance classes', say: 'Which parts of the OGC API – Tiles standard the server declares.',
+      path: '/ogc/tiles/v1/conformance?f=application/json', kind: 'conformance' },
+    { title: 'A tile through OGC API – Tiles', say: 'Raster layers appear as "map" tilesets under /map/tiles.',
+      path: '/ogc/tiles/v1/collections/bhoonidhi:bs_hh_c97/map/tiles/EPSG:900913/EPSG:900913:10/464/737?f=image/png', kind: 'image' },
+  ]],
+  ['5. Safety: the server is read-only', [
+    { title: 'REST API (should be blocked)', say: 'Expect HTTP 403.', path: '/rest/workspaces.json', kind: 'status' },
+    { title: 'Admin interface (should be blocked)', say: 'Expect HTTP 403.', path: '/web/', kind: 'status' },
+  ]],
+];
+
+const esc = s => String(s).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+const baseUrl = () => baseInput.value.replace(/\/$/, '');
+const badge = r => `<span class="badge ${r.ok ? 'ok' : 'bad'}">HTTP ${r.status}</span> <span style="color:var(--muted)">${esc(r.headers.get('content-type') || '')}</span>`;
+
+async function run(req, out) {
+  const url = baseUrl() + req.path;
+  out.innerHTML = '<span class="say">Running...</span>';
+  try {
+    const r = await fetch(url);
+    let body = '';
+    if (req.kind === 'image' && r.ok) {
+      const blob = await r.blob();
+      body = `<div>${badge(r)} ${(blob.size / 1024).toFixed(1)} KB</div><img alt="tile" src="${URL.createObjectURL(blob)}">`;
+    } else if (req.kind === 'status') {
+      body = `<div>${badge(r)} ${r.status === 403 ? '<b class="ok">blocked, as intended</b>' : ''}</div>`;
+    } else {
+      const text = await r.text();
+      if (req.kind === 'caps' && r.ok) {
+        const doc = new DOMParser().parseFromString(text, 'application/xml');
+        const ows = 'http://www.opengis.net/ows/1.1', wmts = 'http://www.opengis.net/wmts/1.0';
+        const layers = [...doc.getElementsByTagNameNS(wmts, 'Layer')].filter(l => l.parentNode.localName === 'Contents').map(l => l.getElementsByTagNameNS(ows, 'Identifier')[0].textContent);
+        const sets = [...doc.getElementsByTagNameNS(wmts, 'TileMatrixSet')].filter(t => t.parentNode.localName === 'Contents').map(t => t.getElementsByTagNameNS(ows, 'Identifier')[0].textContent);
+        const ops = [...doc.getElementsByTagNameNS(ows, 'Operation')].map(o => o.getAttribute('name'));
+        body = `<div>${badge(r)} ${(text.length / 1024).toFixed(0)} KB of XML</div>
+          <p class="say" style="margin:8px 0 2px"><b>Operations:</b> ${esc(ops.join(', '))}</p>
+          <p class="say" style="margin:2px 0"><b>Tile matrix sets:</b> ${esc(sets.join(', '))}</p>
+          <p class="say" style="margin:2px 0"><b>${layers.length} layers:</b></p><ul class="layers">${layers.map(l => `<li>${esc(l)}</li>`).join('')}</ul>
+          <details><summary>Show raw XML (first 3000 characters)</summary><pre>${esc(text.slice(0, 3000))}</pre></details>`;
+      } else if (req.kind === 'collections' && r.ok) {
+        const ids = JSON.parse(text).collections.map(c => c.id);
+        body = `<div>${badge(r)} <b>${ids.length} collections</b></div><ul class="layers">${ids.map(l => `<li>${esc(l)}</li>`).join('')}</ul>`;
+      } else if (req.kind === 'conformance' && r.ok) {
+        const c = JSON.parse(text).conformsTo;
+        body = `<div>${badge(r)}</div><ul class="layers" style="columns:1">${c.map(l => `<li>${esc(l)}</li>`).join('')}</ul>`;
+      } else if (req.kind === 'json' && r.ok) {
+        const j = JSON.parse(text), f = j.features && j.features[0];
+        const v = f ? f.properties.GRAY_INDEX : null;
+        body = `<div>${badge(r)} <b style="font-size:18px">value = ${v === null ? 'no data' : Number(v).toFixed(Number.isInteger(v) ? 0 : 1)}</b></div><details><summary>Raw JSON</summary><pre>${esc(JSON.stringify(j, null, 2))}</pre></details>`;
+      } else {
+        body = `<div>${badge(r)}</div><pre>${esc(text.slice(0, 2500))}</pre>`;
+      }
+    }
+    out.innerHTML = body;
+  } catch (e) {
+    out.innerHTML = `<span class="badge bad">failed</span> <span class="say">${esc(e.message)}. Is the server running at the address above?</span>`;
+  }
+}
+
+function build() {
+  const main = $('#main'); main.innerHTML = '';
+  for (const [name, reqs] of SECTIONS) {
+    const h = document.createElement('h2'); h.textContent = name; main.appendChild(h);
+    for (const req of reqs) {
+      const card = document.createElement('div'); card.className = 'card';
+      card.innerHTML = `<h3>${esc(req.title)}</h3><p class="say">${esc(req.say)}</p>
+        <div class="url"></div>
+        <div class="row"><button>Run</button><a class="btn ghost" target="_blank" rel="noopener">Open in new tab</a></div><div class="out"></div>`;
+      const urlBox = card.querySelector('.url'), open = card.querySelector('a'), out = card.querySelector('.out');
+      const refresh = () => { const u = baseUrl() + req.path; urlBox.textContent = u; open.href = u; };
+      refresh(); req._refresh = refresh; req._run = () => run(req, out);
+      card.querySelector('button').onclick = req._run;
+      main.appendChild(card);
+    }
+  }
+}
+build();
+baseInput.addEventListener('input', () => SECTIONS.forEach(([, rs]) => rs.forEach(r => r._refresh())));
+$('#runall').onclick = async () => { for (const [, rs] of SECTIONS) for (const r of rs) await r._run(); };
+</script>
+</body>
+</html>

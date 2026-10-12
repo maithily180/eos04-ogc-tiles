@@ -96,7 +96,7 @@ python scripts/publish.py                      # styles, layers, EPSG:3857 grids
 GATEWAY_URL=http://localhost:8081 pytest -v tests
 ```
 
-Then open `http://localhost:8081/demo/` or, in QGIS, add a WMTS connection to
+Then open `http://localhost:8081/demo/` (web map) or `http://localhost:8081/demo/explorer.html` (every WMTS and OGC API request with its response, in the browser) or, in QGIS, add a WMTS connection to
 `http://localhost:8081/geoserver/gwc/service/wmts?REQUEST=GetCapabilities`.
 
 ```bash
