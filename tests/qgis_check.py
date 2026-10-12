@@ -1,4 +1,4 @@
-"""Headless QGIS (PyQGIS) test of the WMTS service: load all layers via GetCapabilities, render, identify values.
+r"""Headless QGIS (PyQGIS) test of the WMTS service: load all layers via GetCapabilities, render, identify values.
 
 Run with the Python that ships with QGIS, e.g.:
     "C:\Program Files\QGIS 3.40.9\bin\python-qgis-ltr.bat" tests\qgis_check.py
