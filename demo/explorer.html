@@ -148,8 +148,9 @@ async function run(req, out) {
 
 function build() {
   const main = $('#main'); main.innerHTML = '';
+  let secNo = 0;
   for (const [name, reqs] of SECTIONS) {
-    const h = document.createElement('h2'); h.textContent = name; main.appendChild(h);
+    const h = document.createElement('h2'); h.textContent = name; h.id = 's' + (++secNo); main.appendChild(h);
     for (const req of reqs) {
       const card = document.createElement('div'); card.className = 'card';
       card.innerHTML = `<h3>${esc(req.title)}</h3><p class="say">${esc(req.say)}</p>
@@ -164,6 +165,8 @@ function build() {
   }
 }
 build();
+// deep links such as explorer.html#s3 jump to a section once the page has been built
+if (location.hash) { const t = document.querySelector(location.hash); if (t) t.scrollIntoView(); }
 baseInput.addEventListener('input', () => SECTIONS.forEach(([, rs]) => rs.forEach(r => r._refresh())));
 $('#runall').onclick = async () => { for (const [, rs] of SECTIONS) for (const r of rs) await r._run(); };
 </script>
